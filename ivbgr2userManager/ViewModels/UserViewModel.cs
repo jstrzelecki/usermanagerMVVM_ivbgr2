@@ -12,7 +12,7 @@ namespace ivbgr2userManager.ViewModels;
 
 public partial class UserViewModel : ViewModelBase
 {
-    private readonly string _connectionString = "Host:localhost;Port=5432;Username=js;Password=postgres;Database=users_db;";
+    private readonly string  _connectionString = "Host=localhost;Port=5432;Username=js;Password=postgres;Database=users_db";
 
     [ObservableProperty] private string _firstName; //FirstName
     [ObservableProperty] private string _lastName; // LastName
@@ -78,13 +78,10 @@ public partial class UserViewModel : ViewModelBase
     private void InitDb()
     {
         using var connection = new NpgsqlConnection(_connectionString);
-        connection.Execute(@"
-             CREATE TABLE IF NOT EXISTS users(
-                 id SERIAL PRIMARY KEY,
-                 first_name TEXT NOT NULL,
-                 last_name TEXT NOT NULL,
-                 email TEXT NOT NULL UNIQUE,
-             )"
+        connection.Execute(@"CREATE TABLE IF NOT EXISTS users(id SERIAL PRIMARY KEY, 
+                                        first_name TEXT NOT NULL, 
+                                        last_name TEXT NOT NULL, 
+                                        email TEXT NOT NULL UNIQUE)"
             );
     }
 }

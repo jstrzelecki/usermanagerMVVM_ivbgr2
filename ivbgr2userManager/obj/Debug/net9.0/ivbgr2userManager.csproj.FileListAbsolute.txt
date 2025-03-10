@@ -69,3 +69,4 @@
 /home/js/RiderProjects/ivbgr2userManager/ivbgr2userManager/bin/Debug/net9.0/Microsoft.Extensions.DependencyInjection.Abstractions.dll
 /home/js/RiderProjects/ivbgr2userManager/ivbgr2userManager/bin/Debug/net9.0/Microsoft.Extensions.Logging.Abstractions.dll
 /home/js/RiderProjects/ivbgr2userManager/ivbgr2userManager/bin/Debug/net9.0/Npgsql.dll
+/home/js/RiderProjects/ivbgr2userManager/ivbgr2userManager/obj/Debug/net9.0/ivbgr2userManager.sourcelink.json
