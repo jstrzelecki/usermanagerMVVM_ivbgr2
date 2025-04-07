@@ -1,69 +1,133 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Threading.Tasks;
 using System.Windows.Input;
-using Avalonia.Controls;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Dapper;
 using ivbgr2userManager.Models;
+using ivbgr2userManager.Services;
 using Npgsql;
 
 namespace ivbgr2userManager.ViewModels;
 
 public partial class UserViewModel : ViewModelBase
 {
-    private readonly string  _connectionString = "Host=localhost;Port=5432;Username=js;Password=postgres;Database=users_db";
-
+    //private readonly UserRepository _repository;
+    private readonly UserService _userService;
+    
     [ObservableProperty] private string _firstName; //FirstName
     [ObservableProperty] private string _lastName; // LastName
     [ObservableProperty] private string _email; // Email 
+    [ObservableProperty] private User? _selectedUser;
+
+    // pola do obsługi radiobuttonów
+    [ObservableProperty] private bool _isViaEmailSelected;
+    [ObservableProperty] private bool _isViaSmsSelected;
+    [ObservableProperty] private bool _isNoUpdatesSelected;
+
+    [ObservableProperty] private bool _isChecked = true;
+
+    [ObservableProperty] private string _selectedAccountType;
+    public ObservableCollection<string> AccountTypes { get; } =
+    [
+        "Standard", "Premium", "Business"
+    ];
 
     public ObservableCollection<User> Users { get; } = new();
     
     public ICommand SaveCommand { get; }
     public ICommand LoadCommand { get; }
+    public ICommand DeleteCommand { get; }
 
-    public UserViewModel()
+    public UserViewModel(UserService usersService)
     {
-        SaveCommand = new RelayCommand(SaveUser);
-        LoadCommand = new RelayCommand(LoadUsers);
-        InitDb();
+        _userService = usersService;
+        /*_repository = new UserRepository("""
+                                            Host=localhost;
+                                            Port=5432;
+                                            Username=js;
+                                            Password=postgres;
+                                            Database=users_db
+                                            """);*/
         
+        SaveCommand = new AsyncRelayCommand(SaveUser);
+        LoadCommand = new AsyncRelayCommand(LoadUsers);
+        DeleteCommand = new AsyncRelayCommand(DeleteUser, CanDeleteUser);
+        
+        //_repository.InitDB();
+        _ = LoadUsers();
+
+        SelectedAccountType = AccountTypes[0];
+        IsChecked = true;
     }
 
-    private void LoadUsers()
-    {
-        using var connection = new NpgsqlConnection(_connectionString);
-        var users = connection.Query<User>("SELECT * FROM users");
-        Users.Clear();
-        foreach (var user in users)
-        {
-            Users.Add(user);
-        }
-    }
+    private bool CanDeleteUser() => SelectedUser != null;
+  
 
-    private void SaveUser()
+    private async Task DeleteUser()
     {
-        using var connection = new NpgsqlConnection(_connectionString);
-        var user = new User
-        {
-            FirstName = FirstName,
-            LastName = LastName,
-            Email = Email
-        };
-
+        if (SelectedUser == null) return;
+        
+        //_repository.DeleteUserById(SelectedUser.Id);
         try
         {
-            connection.Execute(
-                @"INSERT INTO users (first_name, last_name, email) 
-                   VALUES (@FirstName, @LastName, @Email)", user);
-            Users.Add(user);
+            await _userService.DeleteUserAsync(SelectedUser.Id);
+            Users.Remove(SelectedUser);
+            SelectedUser = null;
+            (DeleteCommand as AsyncRelayCommand)?.NotifyCanExecuteChanged();
+            Console.WriteLine("User deleted successfully");
+
         }
-        catch (PostgresException ex) when (ex.SqlState == "23505")
+        catch (KeyNotFoundException ex)
+        {
+            Console.WriteLine($"User not exists error : {ex.Message} ");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+     
+    }
+
+    private async Task LoadUsers()
+    {
+        try
+        {
+            var usersFromDb = await _userService.GetAllUsersAsync();
+            Users.Clear();
+            Users.AddRange(usersFromDb);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+       
+    }
+
+    private async Task SaveUser()
+    {   
+        var user = new User
+             {
+                 FirstName = FirstName.Trim(),
+                 LastName = LastName.Trim(),
+                 Email = Email.Trim(),
+                 NotificationPreference = IsViaEmailSelected ? "Email" : 
+                                          IsViaSmsSelected ? "SMS" : "None",
+                 AccountType = SelectedAccountType,
+                 isTermsAccepted = IsChecked
+             };
+        try
+        {
+            await _userService.AddUserAsync(user);
+            Users.Add(user);
+            ClearFields();
+        }
+        catch (PostgresException ex) when (ex.SqlState == "23505") // kod błędu dla UNIQUE
         {
             Console.WriteLine("Użytkownik o takim emailu już istnieje");
         }
-        catch (PostgresException ex) when (ex.SqlState == "23502")
+        catch (PostgresException ex) when (ex.SqlState == "23502") // kod błędu dla null
         {
             Console.WriteLine("Wszystkie pola powinny być wypełnione");
         }
@@ -71,18 +135,27 @@ public partial class UserViewModel : ViewModelBase
         {
             Console.WriteLine(ex.Message);
         }
+        
 
-        LoadUsers();
+        
     }
 
-    private void InitDb()
+    private void ClearFields()
     {
-        using var connection = new NpgsqlConnection(_connectionString);
-        connection.Execute(@"CREATE TABLE IF NOT EXISTS users(id SERIAL PRIMARY KEY, 
-                                        first_name TEXT NOT NULL, 
-                                        last_name TEXT NOT NULL, 
-                                        email TEXT NOT NULL UNIQUE)"
-            );
+        FirstName = string.Empty;
+        LastName = string.Empty;
+        Email = string.Empty;
+        IsViaEmailSelected = false;
+        IsViaSmsSelected = false;
+        IsNoUpdatesSelected = false;
+        SelectedAccountType = AccountTypes[0];
+        IsChecked = true;
+    }
+
+    partial void OnSelectedUserChanged(User? user)
+    {
+        (DeleteCommand as RelayCommand)?.NotifyCanExecuteChanged();
+        
     }
 }
 

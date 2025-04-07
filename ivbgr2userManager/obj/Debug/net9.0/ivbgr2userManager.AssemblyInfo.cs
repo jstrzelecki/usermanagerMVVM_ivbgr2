@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ivbgr2userManager")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+06a4c3ba2c45b03881248bb30f414997dc8e4cd4")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+814d54b7540a1988915a6d18f7aa2bd924c72ac4")]
 [assembly: System.Reflection.AssemblyProductAttribute("ivbgr2userManager")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ivbgr2userManager")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

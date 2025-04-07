@@ -3,6 +3,7 @@
   <component name="AvaloniaProject">
     <option name="projectPerEditor">
       <map>
+        <entry key="ivbgr2userManager/App.axaml" value="ivbgr2userManager/ivbgr2userManager.csproj" />
         <entry key="ivbgr2userManager/Views/MainWindow.axaml" value="ivbgr2userManager/ivbgr2userManager.csproj" />
       </map>
     </option>
